@@ -4,7 +4,7 @@ import numpy as np
 from nist import Tests
 from subseq import Subseq
 
-
+print("HEllO")
 def embedded_gen(n):
     return "".join(map(str,  np.random.randint(0,2,size=n)))
 
