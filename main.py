@@ -15,16 +15,20 @@ def Librarian(n):
         res = ''
         r = random.randint(0, len(str_text) - n)
         for i in range(r, r+n):
-            res += bin(s_arr[i])[2:] 
-    return res[0:n-1]
+            byte = bin(s_arr[i])[2:]
+            while len(byte) < 8:
+                byte = '0' + byte
+            res += byte
+    return res
 
 def generate_seqs(bits_length, num):
     seq = []
     for i in range(num//2):
         s = embedded_gen(bits_length)
         seq.append(s)
+    byte_length = bits_length//8
     for i in range(num//2-4):
-        s = Librarian(bits_length)
+        s = Librarian(byte_length)
         seq.append(s)
     s = '1'*bits_length
     seq.append(s)
