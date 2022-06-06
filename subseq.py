@@ -37,10 +37,10 @@ class Subseq:
     
     def method_3(self, p):
         values = [1, 0]
-        emb = random.choices(values, weights=[p, 1-p], k=len(self.X))
+        alpha = random.choices(values, weights=[p, 1-p], k=len(self.X))
         s = ''
         for i in range(len(self.X)):
-            if emb[i] == 1:
+            if alpha[i] == 1:
                 s+=self.X[i]
         return s
 
