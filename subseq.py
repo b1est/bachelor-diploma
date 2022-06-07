@@ -12,8 +12,8 @@ class Subseq:
         length_of_bits = len(self.X)
         subseq = ''
         for j in range(length_of_bits):
-                if j*m+k < length_of_bits:
-                    subseq += self.X[j*m+k]
+            if j*m+k < length_of_bits:
+                subseq += self.X[j*m+k]
         return subseq
 
     def method_2(self, m):
@@ -55,6 +55,21 @@ class Subseq:
                 _sum += alpha[j]
             prob = (k - _sum) / (len(self.X) - i)
             alpha.append(random.choices(values, weights=[prob, 1 - prob], k=1)[0])
+        
+        tmp = 0
+        for i in range(len(self.X)):
+            tmp+=alpha[i]
+        if tmp < k:
+            random_index = random.randint(0, len(alpha) - 1)
+            while alpha[random_index] != 0:
+                random_index = random.randint(0, len(alpha) - 1)
+            alpha[random_index] = 1
+        elif tmp > k:
+            random_index = random.randint(0, len(alpha) - 1)
+            while alpha[random_index] != 1:
+                random_index = random.randint(0, len(alpha) - 1)
+            alpha[random_index] = 0
+
         for i in range(len(self.X)):
             if alpha[i] == 1:
                 s+=self.X[i]
