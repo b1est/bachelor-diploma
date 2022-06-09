@@ -4,16 +4,20 @@ import numpy as np
 from nist import Tests
 from subseq import Subseq
 
+import time
+import os
+import glob
+from xlsxwriter.workbook import Workbook
 
 def embedded_gen(n):
     return "".join(map(str,  np.random.randint(0,2,size=n)))
 
-def Librarian(n): 
+def Librarian(n, r): 
     with open("new_text.txt", 'r') as text:
         str_text = text.read()
         s_arr = bytearray(str_text, "utf-8")
         res = ''
-        r = random.randint(0, len(str_text) - n)
+       
         for i in range(r, r+n):
             byte = bin(s_arr[i])[2:]
             while len(byte) < 8:
@@ -27,26 +31,27 @@ def generate_seqs(bits_length, num):
         s = embedded_gen(bits_length)
         seq.append(s)
     byte_length = bits_length//8
+    s = open("new_text.txt", 'r')
+    text_len = len(s.read())
+    s.close()
+    R = []
     for i in range(num//2-4):
-        s = Librarian(byte_length)
+        r = random.randint(0, text_len - byte_length)
+
+        while r in R and r in [ri for ri in range(r, r+byte_length)]:
+            r = random.randint(0, text_len - byte_length)
+        s = Librarian(byte_length, r)
+        
+        for ri in range(r, r+byte_length):
+            R.append(ri)
         seq.append(s)
     s = '1'*bits_length
     seq.append(s)
-    s = '0'*bits_length
+    s = '01'*(bits_length//2)
     seq.append(s)
-    s = ''
-    for i in range(bits_length):
-        if i % 2 == 0:
-            s += '0'
-        else:
-            s += '1'
+    s = '0011'*(bits_length//4)
     seq.append(s)
-    s = ''
-    for i in range(bits_length):
-        if i % 2 == 0:
-            s += '1'
-        else:
-            s += '0'
+    s = '0000000011111111'*(bits_length//16)
     seq.append(s)
     return seq
 
@@ -66,6 +71,7 @@ def methods_fill(seqs, alpha = 0.05):
         for i in range(1, 7):
             if i == 1:
                 ress.append(Tests(Subseq(s).method_1(2, 0), alpha).frequency())
+                ress.append(Tests(Subseq(s).method_1(2, 1), alpha).frequency())
             elif i == 2:
                 ress.append(Tests(Subseq(s).method_2(4), alpha).frequency())
             elif i == 3:
@@ -92,23 +98,30 @@ def nist_tests(s, alpha = 0.05):
     res.append(t.cumsum_test(1))
     return res
 
-def make_csv(length, num, name):
-    seq = generate_seqs(length, num)
-    headers = ["Method 1", "Method 2", "Method 3", "Method 4", "Method 5", "Frequency (Monobit) Test", "Frequency Test within a Block", "Runs Test", "Test for the Longest Run of Ones in a Block", "Cumulative Sums Test (FORWARD)", "Cumulative Sums Test (BACKWARD)"]
-    resume = methods_fill(seq)
+def make_csv(resume, name):
+    
+
+    headers = ["№", "Method 1a", "Method 1b", "Method 2", "Method 3", "Method 4", "Method 5", "Frequency (Monobit) Test", "Frequency Test within a Block", "Runs Test", "Test for the Longest Run of Ones in a Block", "Cumulative Sums Test (FORWARD)", "Cumulative Sums Test (BACKWARD)"]
+    
     with open(name, 'w', encoding='UTF8', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(headers)
+        i = 1
         for r in resume:
-            writer.writerow(r)
+            tmp = [i]
+            for ri in r:
+                tmp.append(ri)
+            writer.writerow(tmp)
+            i+=1
     return resume
 
-def report_txt(result_tests, name_report_file):
+def report(result_tests, name_report_file):
     length_of_seq_result = 0
-    headers = [['Kolmogorov True', 'Kolmogorov False', 'NIST True', 'NIST False'], ['GOOD Seq Kolmogorov True', 'GOOD Seq Kolmogorov False', 'GOOD Seq NIST True', 'GOOD Seq NIST False'], ['BAD Seq Kolmogorov True', 'BAD Seq Kolmogorov False', 'BAD Seq NIST True', 'BAD Seq NIST False']]
+    headers = [["№",'Kolmogorov True', 'Kolmogorov False', 'NIST True', 'NIST False'], ['GOOD Seq Kolmogorov True', 'GOOD Seq Kolmogorov False', 'GOOD Seq NIST True', 'GOOD Seq NIST False'], ['BAD Seq Kolmogorov True', 'BAD Seq Kolmogorov False', 'BAD Seq NIST True', 'BAD Seq NIST False']]
     with open(name_report_file, 'w', encoding='UTF8', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(headers[0])
+        ii = 1
         for r in result_tests:
             length_of_seq_result = len(r)
             for i in r:
@@ -117,7 +130,7 @@ def report_txt(result_tests, name_report_file):
                 t_seq_nist_count = 0
                 f_seq_nist_count = 0
                 for i in range(length_of_seq_result):
-                    if i < 5:
+                    if i < 6:
                         if r[i] == True:
                             t_seq_kolmogorov_count += 1
                         if r[i] == False:
@@ -127,12 +140,12 @@ def report_txt(result_tests, name_report_file):
                             t_seq_nist_count += 1
                         if r[i] == False:
                             f_seq_nist_count += 1
-            writer.writerow([t_seq_kolmogorov_count, f_seq_kolmogorov_count, t_seq_nist_count, f_seq_nist_count])
+            writer.writerow([ii, t_seq_kolmogorov_count, f_seq_kolmogorov_count, t_seq_nist_count, f_seq_nist_count])
+            ii+=1
         length_of_result = len(result_tests)
         half = length_of_result//2
-        good_seq_tests = [x for l in result_tests[:half] for x in l]
-        bad_seq_tests = [x for l in result_tests[half:] for x in l]
-        
+        good_seq_tests = [x for l in result_tests[half:] for x in l]
+        bad_seq_tests = [x for l in result_tests[:half] for x in l]
         def gb_counter(seq):
             t_seq_kolmogorov_count = 0
             f_seq_kolmogorov_count = 0
@@ -140,34 +153,61 @@ def report_txt(result_tests, name_report_file):
             f_seq_nist_count = 0
             j = 0
             for i in range(len(seq)):
-                if i < 5+length_of_seq_result*j:
+                if i < 6+length_of_seq_result*j:
                     if seq[i] == True:
                         t_seq_kolmogorov_count += 1
                     if seq[i] == False:
                         f_seq_kolmogorov_count += 1
-                elif i >= 5+length_of_seq_result*j and i < 11+length_of_seq_result*j:
+                elif i >= 6+length_of_seq_result*j and i < 12+length_of_seq_result*j:
                     if seq[i] == True:
                         t_seq_nist_count += 1
                     if seq[i] == False:
                         f_seq_nist_count += 1
-                    if i == 10+length_of_seq_result*j:
+                    if i == 11+length_of_seq_result*j:
                         j+=1
-            
-            return [t_seq_kolmogorov_count, f_seq_kolmogorov_count, t_seq_nist_count, f_seq_nist_count]
-        
+            return [t_seq_kolmogorov_count, f_seq_kolmogorov_count, t_seq_nist_count, f_seq_nist_count]    
         writer.writerow('\n')
         writer.writerow(headers[1])
-        writer.writerow(gb_counter(good_seq_tests))
+        writer.writerow(gb_counter(bad_seq_tests))
         writer.writerow('\n')
         writer.writerow(headers[2])
-        writer.writerow(gb_counter(bad_seq_tests))
+        writer.writerow(gb_counter(good_seq_tests))
 
-def main():
-    num_of_seq = 100
-    res256 = make_csv(256, num_of_seq, 'seq256.csv')
-    res512 = make_csv(512, num_of_seq, 'seq512.csv')
-    report_txt(res256, '256stat.csv')
-    report_txt(res512, '512stat.csv')
+def convert_csv_to_xlsx():
+    for csvfile in glob.glob(os.path.join('.', '*.csv')):
+        workbook = Workbook(csvfile[:-4] + '.xlsx')
+        worksheet = workbook.add_worksheet()
+        with open(csvfile, 'rt', encoding='utf8') as f:
+            reader = csv.reader(f)
+            for r, row in enumerate(reader):
+                for c, col in enumerate(row):
+                    worksheet.write(r, c, col)
+        workbook.close()
 
+def clear_folder_from_file_type(_type):
+    dir_list = os.listdir()
+    type_len = -1*len(_type)
+    for file in dir_list:
+        if file[type_len:] == _type:
+            os.remove(file)
+
+def main(bits_len = 256, num_of_seq = 100):
+    alpha = [0.01, 0.05, 0.1]
+    seq = generate_seqs(bits_len, num_of_seq)
+    for a in alpha:
+        resume = methods_fill(seq, a)
+        res256 = make_csv(resume, f'Результати тестів послідовності довжиною 256 біт({a}).csv')
+        res512 = make_csv(resume, f'Результати тестів послідовності довжиною 512 біт({a}).csv')
+        report(res256, f'256stat({a}).csv')
+        report(res512, f'512stat({a}).csv')
+
+    convert_csv_to_xlsx()
+    time.sleep(5)
+
+    
 if __name__ == "__main__": 
+    clear_folder_from_file_type('xlsx')
+
     main()
+
+    clear_folder_from_file_type('csv')
