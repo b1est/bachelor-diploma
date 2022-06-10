@@ -12,7 +12,7 @@ class Subseq:
         length_of_bits = len(self.X)
         subseq = ''
         for j in range(length_of_bits):
-            if j*m+k < length_of_bits:
+            if j*m+k <= length_of_bits-1:
                 subseq += self.X[j*m+k]
         return subseq
 

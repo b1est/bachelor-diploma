@@ -10,7 +10,7 @@ import glob
 from xlsxwriter.workbook import Workbook
 
 def embedded_gen(n):
-    return "".join(map(str,  np.random.randint(0,2,size=n)))
+    return "".join(map(str, np.random.randint(0,2,size=n)))
 
 def Librarian(n, r): 
     with open("new_text.txt", 'r') as text:
@@ -68,18 +68,32 @@ def methods_fill(seqs, alpha = 0.05):
     res = []
     for s in seqs:
         ress = []
+        si = Subseq(s)
+        s_len = len(s)
         for i in range(1, 7):
             if i == 1:
-                ress.append(Tests(Subseq(s).method_1(2, 0), alpha).frequency())
-                ress.append(Tests(Subseq(s).method_1(2, 1), alpha).frequency())
+                r = si.method_1(2, 0)
+                ress.append(Tests(r, alpha).frequency())
+                r = si.method_1(2, 1)
+                ress.append(Tests(r, alpha).frequency())
             elif i == 2:
-                ress.append(Tests(Subseq(s).method_2(4), alpha).frequency())
+                if s_len == 256:
+                    r = si.method_2(2)
+                elif s_len == 512:
+                    r = si.method_2(4)
+                ress.append(Tests(r, alpha).frequency())
             elif i == 3:
-                ress.append(Tests(Subseq(s).method_3(0.5), alpha).frequency())
+                r = si.method_3(0.5)
+                
+                ress.append(Tests(r, alpha).frequency())
             elif i == 4:
-                ress.append(Tests(Subseq(s).method_4(len(s)//2), alpha).frequency())
+                r = si.method_4(len(s)//2)
+                
+                ress.append(Tests(r, alpha).frequency())
             elif i == 5:
-                ress.append(Tests(Subseq(s).method_5(len(s)//2), alpha).frequency())
+                r = si.method_5(len(s)//2)
+                
+                ress.append(Tests(r, alpha).frequency())
             else:
                 r = nist_tests(s, alpha)
                 for re in r:
@@ -198,17 +212,15 @@ def main(bits_len = 256, num_of_seq = 100):
         print(f'Довжина {bl} біт')
         seq = generate_seqs(bl, num_of_seq)
         for a in alpha:
-            print(f'Рівень значущості {a}')
+            print(f'\tРівень значущості {a}')
             resume = methods_fill(seq, a)
-            res = make_csv(resume, f'Результати тестів послідовності довжиною {bl} біт({a}).csv')
-            report(res, f'{bl}stat({a}).csv')
-    convert_csv_to_xlsx()
-    time.sleep(5)
-
+            res = make_csv(resume, f'Результати тестів послідовності довжиною {bl} біт({int(a*100)}%).csv')
+            report(res, f'{bl}.{int(a*100)}.stat.csv')
+    
     
 if __name__ == "__main__": 
     clear_folder_from_file_type('xlsx')
-
     main()
-
+    convert_csv_to_xlsx()
+    time.sleep(3)
     clear_folder_from_file_type('csv')
