@@ -50,25 +50,8 @@ class Subseq:
         s = ''
         alpha = random.choices(values, weights=[k / len(self.X), (len(self.X)-k)/len(self.X)], k=1)
         for i in range(len(self.X)):
-            _sum = 0
-            for j in range(i):
-                _sum += alpha[j]
-            prob = (k - _sum) / (len(self.X) - i)
+            prob = (k - sum(alpha)) / (len(self.X) - i)
             alpha.append(random.choices(values, weights=[prob, 1 - prob], k=1)[0])
-        
-        tmp = 0
-        for i in range(len(self.X)):
-            tmp+=alpha[i]
-        if tmp < k:
-            random_index = random.randint(0, len(alpha) - 1)
-            while alpha[random_index] != 0:
-                random_index = random.randint(0, len(alpha) - 1)
-            alpha[random_index] = 1
-        elif tmp > k:
-            random_index = random.randint(0, len(alpha) - 1)
-            while alpha[random_index] != 1:
-                random_index = random.randint(0, len(alpha) - 1)
-            alpha[random_index] = 0
 
         for i in range(len(self.X)):
             if alpha[i] == 1:

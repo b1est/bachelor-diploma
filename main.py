@@ -193,14 +193,15 @@ def clear_folder_from_file_type(_type):
 
 def main(bits_len = 256, num_of_seq = 100):
     alpha = [0.01, 0.05, 0.1]
-    seq = generate_seqs(bits_len, num_of_seq)
-    for a in alpha:
-        resume = methods_fill(seq, a)
-        res256 = make_csv(resume, f'Результати тестів послідовності довжиною 256 біт({a}).csv')
-        res512 = make_csv(resume, f'Результати тестів послідовності довжиною 512 біт({a}).csv')
-        report(res256, f'256stat({a}).csv')
-        report(res512, f'512stat({a}).csv')
-
+    bits_len = [256, 512]
+    for bl in bits_len:
+        print(f'Довжина {bl} біт')
+        seq = generate_seqs(bl, num_of_seq)
+        for a in alpha:
+            print(f'Рівень значущості {a}')
+            resume = methods_fill(seq, a)
+            res = make_csv(resume, f'Результати тестів послідовності довжиною {bl} біт({a}).csv')
+            report(res, f'{bl}stat({a}).csv')
     convert_csv_to_xlsx()
     time.sleep(5)
 
