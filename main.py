@@ -1,8 +1,10 @@
+
 import csv
 import random
 import numpy as np
 from nist import Tests
 from subseq import Subseq
+from confident import confidence_interval_probability_bernoulli_model_independent_examinations as cipbmie
 
 import time
 import os
@@ -17,13 +19,38 @@ def Librarian(n, r):
         str_text = text.read()
         s_arr = bytearray(str_text, "utf-8")
         res = ''
-       
+        
         for i in range(r, r+n):
             byte = bin(s_arr[i])[2:]
             while len(byte) < 8:
-                byte = '0' + byte
+                byte = '0' + byte  
             res += byte
     return res
+
+# def bad_generator(n, size=1, repeats = True):
+# 	if size == 1:
+# 		res = bin(random.randint(0, 2**n-1))[2:]
+# 		while len(res) < n:
+# 			res = '0' + res
+# 	else:
+# 		res = []
+# 		if not repeats:
+# 			_res = [bin(random.randint(0, 2**n-1))[2:] for j in range(size) ]
+# 		else:
+# 			_res = list(set([bin(random.randint(0, 2**n-1))[2:] for j in range(size)]))
+# 			while len(_res) < size:
+# 				bits = bin(random.randint(0, 2**n-1))[2:]
+# 				if bits not in res:
+# 					_res.append(bits)
+# 		for r in _res:
+# 			if len(r) == n:
+# 				res.append(r)
+# 			else:
+# 				_r = r
+# 				while len(_r) < n:
+# 					_r = '0' + _r
+# 				res.append(_r)
+# 	return res
 
 def generate_seqs(bits_length, num):
     seq = []
@@ -45,6 +72,9 @@ def generate_seqs(bits_length, num):
         for ri in range(r, r+byte_length):
             R.append(ri)
         seq.append(s)
+    # s = bad_generator(bits_length, num//2-4)
+    # for item in s:
+    #     seq.append(item)
     s = '1'*bits_length
     seq.append(s)
     s = '01'*(bits_length//2)
@@ -132,6 +162,8 @@ def make_csv(resume, name):
 def report(result_tests, name_report_file):
     length_of_seq_result = 0
     headers = [["№",'Kolmogorov True', 'Kolmogorov False', 'NIST True', 'NIST False'], ['GOOD Seq Kolmogorov True', 'GOOD Seq Kolmogorov False', 'GOOD Seq NIST True', 'GOOD Seq NIST False'], ['BAD Seq Kolmogorov True', 'BAD Seq Kolmogorov False', 'BAD Seq NIST True', 'BAD Seq NIST False']]
+    all_seq = []
+    gb = []
     with open(name_report_file, 'w', encoding='UTF8', newline='') as f:
         writer = csv.writer(f)
         writer.writerow(headers[0])
@@ -155,11 +187,13 @@ def report(result_tests, name_report_file):
                         if r[i] == False:
                             f_seq_nist_count += 1
             writer.writerow([ii, t_seq_kolmogorov_count, f_seq_kolmogorov_count, t_seq_nist_count, f_seq_nist_count])
+            all_seq.append([t_seq_kolmogorov_count, f_seq_kolmogorov_count, t_seq_nist_count, f_seq_nist_count])
             ii+=1
         length_of_result = len(result_tests)
         half = length_of_result//2
-        good_seq_tests = [x for l in result_tests[half:] for x in l]
-        bad_seq_tests = [x for l in result_tests[:half] for x in l]
+        good_seq_tests = [x for l in result_tests[:half] for x in l]
+        bad_seq_tests = [x for l in result_tests[half:] for x in l]
+
         def gb_counter(seq):
             t_seq_kolmogorov_count = 0
             f_seq_kolmogorov_count = 0
@@ -182,10 +216,15 @@ def report(result_tests, name_report_file):
             return [t_seq_kolmogorov_count, f_seq_kolmogorov_count, t_seq_nist_count, f_seq_nist_count]    
         writer.writerow('\n')
         writer.writerow(headers[1])
-        writer.writerow(gb_counter(bad_seq_tests))
+        gst = gb_counter(good_seq_tests)
+        bst = gb_counter(bad_seq_tests)
+        gb.append(gst)
+        gb.append(bst)
+        writer.writerow(gst)
         writer.writerow('\n')
         writer.writerow(headers[2])
-        writer.writerow(gb_counter(good_seq_tests))
+        writer.writerow(bst)
+        return all_seq, gb
 
 def convert_csv_to_xlsx():
     for csvfile in glob.glob(os.path.join('.', '*.csv')):
@@ -205,22 +244,78 @@ def clear_folder_from_file_type(_type):
         if file[type_len:] == _type:
             os.remove(file)
 
+def task(stat, a, β):
+    with open("log.txt", "a") as log:
+        if len(stat) != 2:
+            ii = 1
+            for s in stat:
+                p1_kol, p2_kol = cipbmie(6, s[1], β)
+                p1_nist, p2_nist = cipbmie(6, s[3], β)
+                if p1_kol <= a <= p2_kol:
+                    log.write(f"Kolmogorov: The sequence {ii} is accepted with the significance level {a} and the confidence level {β}. [{p1_kol}; {p2_kol}]\n")
+                else:
+                    log.write(f"Kolmogorov: The sequence {ii} is rejected. [{p1_kol}; {p2_kol}]\n")
+                if p1_nist <= a <= p2_nist:
+                    log.write(f"NIST: The sequence {ii} is accepted with the significance level {a} and the confidence level {β}. [{p1_nist}; {p2_nist}]\n")
+                else:
+                    log.write(f"NIST: The sequence {ii} is rejected. [{p1_nist}; {p2_nist}]\n")
+                ii+=1
+        else:
+            p1_good_kol, p2_good_kol = cipbmie(300, stat[0][1], β)
+            p1_good_nist, p2_good_nist = cipbmie(300, stat[0][3], β)
+  
+            p1_bad_kol, p2_bad_kol = cipbmie(300, stat[1][1], β)
+            p1_bad_nist, p2_bad_nist = cipbmie(300, stat[1][3], β)
+
+            if p1_good_kol <= a <= p2_good_kol:
+                log.write(f"GOOD:\n\tKolmogorov: accepted with the significance level {a} and the confidence level {β}. [{p1_good_kol}; {p2_good_kol}]\n")
+            else:
+                log.write(f"GOOD:\n\tKolmogorov: rejected. [{p1_good_kol}; {p2_good_kol}]\n")
+
+            if p1_good_nist <= a <= p2_good_nist:
+                log.write(f"GOOD:\n\tNIST: accepted with the significance level {a} and the confidence level {β}. [{p1_good_nist}; {p2_good_nist}]\n")
+            else:
+                log.write(f"GOOD:\n\tNIST: rejected. [{p1_good_nist}; {p2_good_nist}]\n")
+
+            if p1_bad_kol <= a <= p2_bad_kol:
+                log.write(f"BAD:\n\tKolmogorov: accepted with the significance level {a} and the confidence level {β}. [{p1_bad_kol}; {p2_bad_kol}]\n")
+            else:
+                log.write(f"BAD:\n\tKolmogorov: rejected. [{p1_bad_kol}; {p2_bad_kol}]\n")
+
+            if p1_bad_nist <= a <= p2_bad_nist:
+                log.write(f"BAD:\n\tNIST: accepted with the significance level {a} and the confidence level {β}. [{p1_bad_nist}; {p2_bad_nist}]\n")
+            else:
+                log.write(f"BAD:\n\tNIST: rejected. [{p1_bad_nist}; {p2_bad_nist}]\n")
+
 def main(bits_len = 256, num_of_seq = 100):
     alpha = [0.01, 0.05, 0.1]
     bits_len = [256, 512]
+    beta = [0.9, 0.95]
+    clear_folder_from_file_type('xlsx')
+    log = open("log.txt", 'w')
+    log.close()
     for bl in bits_len:
-        print(f'Довжина {bl} біт')
+        log = open("log.txt", 'a')
+        log.write(f'Length of {bl} bits\n')
+        log.close()
         seq = generate_seqs(bl, num_of_seq)
         for a in alpha:
-            print(f'\tРівень значущості {a}')
+            log = open("log.txt", 'a')
+            log.write(f'Significance level {a}\n')
+            log.close()
             resume = methods_fill(seq, a)
             res = make_csv(resume, f'Результати тестів послідовності довжиною {bl} біт({int(a*100)}%).csv')
-            report(res, f'{bl}.{int(a*100)}.stat.csv')
-    
-    
-if __name__ == "__main__": 
-    clear_folder_from_file_type('xlsx')
-    main()
+            all_seq_stat, gb_stats = report(res, f'{bl}.{int(a*100)}.stat.csv')
+            for b in beta:
+                log = open("log.txt", 'a')
+                log.write(f'Beta {b}\n')
+                log.close()
+                task(all_seq_stat, a, b)
+                task(gb_stats, a, b)
     convert_csv_to_xlsx()
     time.sleep(3)
     clear_folder_from_file_type('csv')
+    
+    
+if __name__ == "__main__": 
+    main()

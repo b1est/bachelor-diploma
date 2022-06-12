@@ -52,7 +52,6 @@ class Subseq:
         for i in range(len(self.X)):
             prob = (k - sum(alpha)) / (len(self.X) - i)
             alpha.append(random.choices(values, weights=[prob, 1 - prob], k=1)[0])
-
         for i in range(len(self.X)):
             if alpha[i] == 1:
                 s+=self.X[i]
