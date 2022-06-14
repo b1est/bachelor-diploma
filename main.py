@@ -1,4 +1,3 @@
-
 import csv
 import random
 import numpy as np
@@ -59,9 +58,6 @@ def bad_generator(p1, p2, bits_length, size=1):
                     res.append(s)
     return res
     
-
-
-
 def generate_seqs(bits_length, num):
     seq = []
     for i in range(num//2):
@@ -145,12 +141,12 @@ def make_csv(resume, name):
 
 def report(result_tests, name_report_file):
     length_of_seq_result = 0
-    headers = [["№",'Kolmogorov True', 'Kolmogorov False', 'NIST True', 'NIST False'], ['GOOD Seq Kolmogorov True', 'GOOD Seq Kolmogorov False', 'GOOD Seq NIST True', 'GOOD Seq NIST False'], ['BAD Seq Kolmogorov True', 'BAD Seq Kolmogorov False', 'BAD Seq NIST True', 'BAD Seq NIST False']]
+    headers = ["№/Type",'Kolmogorov True', 'Kolmogorov False', 'NIST True', 'NIST False']
     all_seq = []
     gb = []
     with open(name_report_file, 'w', encoding='UTF8', newline='') as f:
         writer = csv.writer(f)
-        writer.writerow(headers[0])
+        writer.writerow(headers)
         ii = 1
         for r in result_tests:
             length_of_seq_result = len(r)
@@ -198,15 +194,14 @@ def report(result_tests, name_report_file):
                     if i == 11+length_of_seq_result*j:
                         j+=1
             return [t_seq_kolmogorov_count, f_seq_kolmogorov_count, t_seq_nist_count, f_seq_nist_count]    
-        writer.writerow('\n')
-        writer.writerow(headers[1])
-        gst = gb_counter(good_seq_tests)
-        bst = gb_counter(bad_seq_tests)
+        gst = ['1-50']
+        bst = ['51-100']
+        for g, b in zip(gb_counter(good_seq_tests), gb_counter(bad_seq_tests)):
+            gst.append(g)
+            bst.append(b)
         gb.append(gst)
         gb.append(bst)
         writer.writerow(gst)
-        writer.writerow('\n')
-        writer.writerow(headers[2])
         writer.writerow(bst)
         return all_seq, gb
 
@@ -229,7 +224,7 @@ def clear_folder_from_file_type(_type):
             os.remove(file)
 
 def task(stat, a, β, length):
-    headers = [["alpha", "beta", "bits length"], ["№",'Kolmogorov', 'p_n', 'p_v', "NIST", 'p_n', 'p_v'], ["Type",'Kolmogorov', 'p_n', 'p_v', "NIST", 'p_n', 'p_v']]
+    headers = [["alpha", "beta", "bits length"], ["№/Type",'Kolmogorov', 'p_n', 'p_v', "NIST", 'p_n', 'p_v']]
     with open("log.csv", "a", encoding='UTF8', newline='') as logcsv:
         writer = csv.writer(logcsv)
         
@@ -254,12 +249,10 @@ def task(stat, a, β, length):
                     else:
                         log.write(f"NIST: The sequence {ii} is rejected. [{p1_nist}; {p2_nist}]\n")
                     ii+=1
-                writer.writerow('\n')
             else:
-                writer.writerow(headers[2])
                 p1_good_kol, p2_good_kol = cipbmie(300, stat[0][1], β)
                 p1_good_nist, p2_good_nist = cipbmie(300, stat[0][3], β)
-    
+
                 p1_bad_kol, p2_bad_kol = cipbmie(300, stat[1][1], β)
                 p1_bad_nist, p2_bad_nist = cipbmie(300, stat[1][3], β)
                 writer.writerow(["GOOD", p1_good_kol <= a <= p2_good_kol, p1_good_kol, p2_good_kol, p1_good_nist <= a <= p2_good_nist, p1_good_nist, p2_good_nist])
@@ -311,8 +304,6 @@ def main(bits_len = [256, 512], num_of_seq = 100, alpha = [0.01, 0.05, 0.1], bet
         convert_csv_to_xlsx()
         time.sleep(3)
         clear_folder_from_file_type('csv')
-
-    
-    
+  
 if __name__ == "__main__": 
     main()

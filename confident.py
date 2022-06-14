@@ -1,4 +1,4 @@
-from scipy.stats import chi2, norm
+from scipy.stats import chi2
 def confidence_interval_probability_bernoulli_model_independent_examinations(n, m, beta):
     def R0(n, beta):
         return n*(1-pow(1-beta, 1/n))
