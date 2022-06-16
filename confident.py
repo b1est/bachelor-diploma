@@ -15,4 +15,8 @@ def confidence_interval_probability_bernoulli_model_independent_examinations(n, 
     else:
         p1 = m/(n*R1(n, m, beta))
         p2 = m/(n*R2(n, m, beta))
+    if isinstance(p1, float):
+        p1 = round(p1,13)
+    if isinstance(p2, float):
+        p2 = round(p2,13)
     return (p1, p2)
