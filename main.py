@@ -246,7 +246,7 @@ def clear_folder_from_file_type(_type):
 
 def task(stat, a, β, length):
     headers = [["alpha", "beta", "bits length"], ["№/Тип",'Колмогоров', 'p_n', 'p_v', "NIST", 'p_n', 'p_v']]
-    with open("log.csv", "a", encoding='UTF8', newline='') as logcsv:
+    with open("confidence_interval.csv", "a", encoding='UTF8', newline='') as logcsv:
         writer = csv.writer(logcsv) 
         if len(stat) != 2:
             ii = 1
