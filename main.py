@@ -109,24 +109,24 @@ def methods_fill(seqs, alpha = 0.05):
         for i in range(1, 7):
             if i == 1:
                 r = si.method_1(2, 0)
-                ress.append(Tests(r, alpha).frequency())
+                ress.append(Tests(r, alpha).frequency_test())
                 r = si.method_1(2, 1)
-                ress.append(Tests(r, alpha).frequency())
+                ress.append(Tests(r, alpha).frequency_test())
             elif i == 2:
                 if s_len == 256:
                     r = si.method_2(2)
                 elif s_len == 512:
                     r = si.method_2(4)
-                ress.append(Tests(r, alpha).frequency())
+                ress.append(Tests(r, alpha).frequency_test())
             elif i == 3:
                 r = si.method_3(0.5)
-                ress.append(Tests(r, alpha).frequency())
+                ress.append(Tests(r, alpha).frequency_test())
             elif i == 4:
                 r = si.method_4(len(s)//2)
-                ress.append(Tests(r, alpha).frequency())
+                ress.append(Tests(r, alpha).frequency_test())
             elif i == 5:
                 r = si.method_5(len(s)//2)
-                ress.append(Tests(r, alpha).frequency())
+                ress.append(Tests(r, alpha).frequency_test())
             else:
                 r = nist_tests(s, alpha)
                 for re in r:
@@ -137,12 +137,12 @@ def methods_fill(seqs, alpha = 0.05):
 def nist_tests(s, alpha = 0.05):
     res = []
     t = Tests(s, alpha)
-    res.append(t.frequency())
+    res.append(t.frequency_test())
     res.append(t.frequency_block())
     res.append(t.runs_test())
     res.append(t.longest_one_block_test())
     res.append(t.cumsum_test())
-    res.append(t.cumsum_test(1))
+    res.append(t.approximate_entropy_test())
     return res
 
 def make_csv(resume, name):
@@ -215,8 +215,8 @@ def report(result_tests, name_report_file):
                     if i == 11+length_of_seq_result*j:
                         j+=1
             return [t_seq_kol_count, f_seq_kol_count, t_seq_nist_count, f_seq_nist_count]    
-        gst = ['Хороші']
-        bst = ['Погані']
+        gst = ['Good']
+        bst = ['Bad']
         for g, b in zip(gb_counter(good_seq_tests), gb_counter(bad_seq_tests)):
             gst.append(g)
             bst.append(b)
@@ -271,8 +271,8 @@ def task(stat, a, β, length):
             reg2 = p1_good_nist <= a <= p2_good_nist
             reb1 = p1_bad_kol <= a <= p2_bad_kol
             reb2 = p1_bad_nist <= a <= p2_bad_nist
-            r1 = ["Хороші", reg1, p1_good_kol, p2_good_kol, reg2, p1_good_nist, p2_good_nist]
-            r2 = ["Погані", reb1, p1_bad_kol, p2_bad_kol, reb2, p1_bad_nist, p2_bad_nist]
+            r1 = ["Good", reg1, p1_good_kol, p2_good_kol, reg2, p1_good_nist, p2_good_nist]
+            r2 = ["Bad", reb1, p1_bad_kol, p2_bad_kol, reb2, p1_bad_nist, p2_bad_nist]
             writer.writerow(r1)
             writer.writerow(r2)
             writer.writerow('\n')

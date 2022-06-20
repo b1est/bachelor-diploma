@@ -19,7 +19,7 @@ class Tests:
         self.seq = _seq
         self.alpha = alpha
 
-    def frequency(self):
+    def frequency_test(self):
         s = 0
         for i in range(0, self.n):
             bit = (self.seq >> i) & 1
@@ -31,7 +31,7 @@ class Tests:
     def frequency_block(self, m = 128):
         N = math.floor(self.n / m)
         if N <= 1:
-            return self.frequency()
+            return self.frequency_test()
         x_obs = 0
         for i in range(1, N+1):
             pi = 0
@@ -61,6 +61,8 @@ class Tests:
 
     def longest_one_block_test(self):
         seq = bin(self.seq)[2:]
+        while len(seq) < self.n:
+            seq = '0' + seq
         if self.n < 128:
             return False
         elif self.n < 6272:
@@ -111,6 +113,8 @@ class Tests:
 
     def cumsum_test(self, mode=0):
         seq = bin(self.seq)[2:]
+        while len(seq) < self.n:
+            seq = '0' + seq
         count = zr(self.n)
         if not mode == 0:
             seq = seq[::-1]
@@ -139,4 +143,29 @@ class Tests:
             t2.append(norm.cdf((4 * k + 3) * _abs / sqrt(self.n)) - sub)
         p = 1.0 - sum(array(t1))
         p += sum(array(t2))
+        return p >= self.alpha
+        
+    def approximate_entropy_test(self,  block_len=10):
+        seq = bin(self.seq)[2:]
+        while len(seq) < self.n:
+            seq = '0' + seq
+        seq += seq[:block_len + 1:]
+        max_block = ''
+        for i in range(block_len + 2):
+            max_block += '1'
+        v1_obs = zr(int(max_block[0:block_len:], 2) + 1)
+        v2_obs = zr(int(max_block[0:block_len + 1:], 2) + 1)
+        for i in range(self.n):
+            v1_obs[int(seq[i:i + block_len:], 2)] += 1
+            v2_obs[int(seq[i:i + block_len + 1:], 2)] += 1
+        v_obs = [v1_obs, v2_obs]
+        sums = zr(2)
+        for i in range(2):
+            for j in range(len(v_obs[i])):
+                if v_obs[i][j] > 0:
+                    sums[i] += v_obs[i][j] * math.log(v_obs[i][j] / self.n)
+        sums /= self.n
+        ape = sums[0] - sums[1]
+        x_obs = 2.0 * self.n * (math.log(2) - ape)
+        p = gammaincc(pow(2, block_len - 1), x_obs / 2.0)
         return p >= self.alpha
